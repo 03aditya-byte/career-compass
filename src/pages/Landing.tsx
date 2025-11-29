@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 import { ArrowRight, Compass, Map, Target, Trophy, ShieldCheck, GraduationCap, Check, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 
 const TEMPLATE_ENTRIES = Object.entries(CAREER_TEMPLATES);
 
@@ -26,6 +26,7 @@ export default function Landing() {
 
   const [selectedSkill, setSelectedSkill] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFiltering, setIsFiltering] = useState(false);
   const adminHighlights = [
     "Monitor counselor performance and sessions",
     "Curate career resources & update templates",
@@ -56,6 +57,12 @@ export default function Landing() {
       return matchesSkill && matchesSearch;
     });
   }, [selectedSkill, searchTerm]);
+
+  useEffect(() => {
+    setIsFiltering(true);
+    const timeout = setTimeout(() => setIsFiltering(false), 400);
+    return () => clearTimeout(timeout);
+  }, [searchTerm, selectedSkill]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -324,49 +331,75 @@ export default function Landing() {
             </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            {filteredTemplates.map(([key, template], index) => (
-              <motion.div
-                key={key}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: index * 0.1 }}
-              >
-                <Card className="h-full border bg-card/70 backdrop-blur">
+            {isFiltering ? (
+              Array.from({ length: 4 }).map((_, index) => (
+                <Card
+                  key={`skeleton-${index}`}
+                  className="h-full border bg-card/70 backdrop-blur animate-pulse"
+                >
                   <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="text-2xl">{template.title}</CardTitle>
-                      <Badge variant="secondary" className="text-xs uppercase tracking-wide">
-                        {template.steps.length} steps
-                      </Badge>
-                    </div>
+                    <div className="h-6 w-40 bg-muted rounded mb-3" />
+                    <div className="h-4 w-56 bg-muted rounded" />
                   </CardHeader>
                   <CardContent className="space-y-4">
-                    <p className="text-sm text-muted-foreground leading-relaxed">
-                      {template.description}
-                    </p>
+                    <div className="h-4 w-full bg-muted rounded" />
                     <div className="flex flex-wrap gap-2">
-                      {template.skills?.map((skill) => (
-                        <Badge
-                          key={skill}
-                          variant="outline"
-                          className="bg-background/60 border-primary/20 text-primary"
-                        >
-                          {skill}
-                        </Badge>
+                      {Array.from({ length: 3 }).map((__, chipIndex) => (
+                        <div
+                          key={chipIndex}
+                          className="h-6 w-20 bg-muted rounded-full"
+                        />
                       ))}
                     </div>
-                    <Button
-                      className="w-full"
-                      variant="outline"
-                      onClick={() => handleGetStarted()}
-                    >
-                      Generate this roadmap <ArrowRight className="ml-2 h-4 w-4" />
-                    </Button>
+                    <div className="h-10 w-full bg-muted rounded" />
                   </CardContent>
                 </Card>
-              </motion.div>
-            ))}
+              ))
+            ) : (
+              filteredTemplates.map(([key, template], index) => (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                >
+                  <Card className="h-full border bg-card/70 backdrop-blur">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-2xl">{template.title}</CardTitle>
+                        <Badge variant="secondary" className="text-xs uppercase tracking-wide">
+                          {template.steps.length} steps
+                        </Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground leading-relaxed">
+                        {template.description}
+                      </p>
+                      <div className="flex flex-wrap gap-2">
+                        {template.skills?.map((skill) => (
+                          <Badge
+                            key={skill}
+                            variant="outline"
+                            className="bg-background/60 border-primary/20 text-primary"
+                          >
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                      <Button
+                        className="w-full"
+                        variant="outline"
+                        onClick={() => handleGetStarted()}
+                      >
+                        Generate this roadmap <ArrowRight className="ml-2 h-4 w-4" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            )}
           </div>
         </div>
       </section>
