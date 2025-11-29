@@ -1,0 +1,14 @@
+export const CAREER_TEMPLATES = {
+  "Software Engineer": {
+    title: "Software Engineer Path",
+    description: "Master the art of building software applications.",
+    steps: [
+      { title: "Learn HTML/CSS/JS", description: "The building blocks of the web." },
+      { title: "Master React", description: "Build dynamic user interfaces." },
+      { title: "Learn Backend (Node/Convex)", description: "Handle data and server logic." },
+      { title: "Build a Portfolio", description: "Showcase your projects." },
+      { title: "Apply for Jobs", description: "Start your career." },
+    ]
+  },
+  // ... others
+}

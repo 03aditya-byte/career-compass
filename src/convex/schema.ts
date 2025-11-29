@@ -30,14 +30,39 @@ const schema = defineSchema(
       isAnonymous: v.optional(v.boolean()), // is the user anonymous. do not remove
 
       role: v.optional(roleValidator), // role of the user. do not remove
+      currentRole: v.optional(v.string()),
+      targetRole: v.optional(v.string()),
+      bio: v.optional(v.string()),
     }).index("email", ["email"]), // index for the email. do not remove or modify
 
-    // add other tables here
+    assessments: defineTable({
+      userId: v.id("users"),
+      answers: v.string(), // JSON stringified answers
+      recommendedCareer: v.string(),
+      createdAt: v.number(),
+    }).index("by_user", ["userId"]),
 
-    // tableName: defineTable({
-    //   ...
-    //   // table fields
-    // }).index("by_field", ["field"])
+    roadmaps: defineTable({
+      userId: v.id("users"),
+      title: v.string(),
+      description: v.string(),
+      steps: v.array(
+        v.object({
+          id: v.string(),
+          title: v.string(),
+          description: v.string(),
+          isCompleted: v.boolean(),
+        })
+      ),
+      status: v.string(), // "active", "completed", "archived"
+    }).index("by_user", ["userId"]),
+
+    goals: defineTable({
+      userId: v.id("users"),
+      title: v.string(),
+      isCompleted: v.boolean(),
+      deadline: v.optional(v.number()),
+    }).index("by_user", ["userId"]),
   },
   {
     schemaValidation: false,
