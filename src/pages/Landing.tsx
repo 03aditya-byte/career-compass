@@ -3,7 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CAREER_TEMPLATES } from "@/lib/career-data";
 import { motion } from "framer-motion";
-import { ArrowRight, Compass, Map, Target, Trophy } from "lucide-react";
+import { ArrowRight, Compass, Map, Target, Trophy, ShieldCheck, GraduationCap, Check } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemo, useState } from "react";
@@ -23,6 +23,16 @@ export default function Landing() {
   };
 
   const [selectedSkill, setSelectedSkill] = useState<string>("all");
+  const adminHighlights = [
+    "Monitor counselor performance and sessions",
+    "Curate career resources & update templates",
+    "Track assessments and engagement analytics",
+  ];
+  const studentHighlights = [
+    "Personalized skill-based roadmaps",
+    "Book 1:1 sessions with counselors",
+    "Track goals and showcase achievements",
+  ];
   const skillOptions = useMemo(() => {
     const uniqueSkills = new Set<string>();
     TEMPLATE_ENTRIES.forEach(([, template]) => {
@@ -133,6 +143,106 @@ export default function Landing() {
               Set milestones and track your progress. Stay motivated with visual insights into your career growth.
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-card/40 border-t">
+        <div className="max-w-6xl mx-auto px-4 space-y-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-3"
+          >
+            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+              Choose Your Portal
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Two panels tailored for every role
+            </h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Admins orchestrate the ecosystem while students dive into personalized journeys—pick the workspace that fits your flow.
+            </p>
+          </motion.div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+            >
+              <Card className="h-full border bg-background/80 backdrop-blur">
+                <CardHeader className="space-y-4">
+                  <Badge variant="secondary" className="w-fit rounded-full uppercase tracking-wide text-xs">
+                    Admin Portal
+                  </Badge>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-2xl">Command Center</CardTitle>
+                    <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                      <ShieldCheck className="h-6 w-6" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Supervise counselors, manage templates, and monitor live assessments from one streamlined cockpit.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <ul className="space-y-3">
+                    {adminHighlights.map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-primary mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() => navigate("/dashboard?view=admin")}
+                  >
+                    Launch Admin Portal <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+            >
+              <Card className="h-full border bg-primary/5 backdrop-blur">
+                <CardHeader className="space-y-4">
+                  <Badge className="w-fit rounded-full uppercase tracking-wide text-xs">
+                    Student Portal
+                  </Badge>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-2xl">Growth Studio</CardTitle>
+                    <div className="h-12 w-12 rounded-xl bg-primary text-primary-foreground flex items-center justify-center">
+                      <GraduationCap className="h-6 w-6" />
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Take assessments, generate AI-guided roadmaps, and keep every milestone on track with counselors.
+                  </p>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <ul className="space-y-3">
+                    {studentHighlights.map((item) => (
+                      <li key={item} className="flex items-start gap-3 text-sm text-muted-foreground">
+                        <Check className="h-4 w-4 text-primary mt-0.5" />
+                        <span>{item}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button className="w-full" onClick={handleGetStarted}>
+                    Enter Student Portal <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            </motion.div>
+          </div>
         </div>
       </section>
 
