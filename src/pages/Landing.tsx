@@ -30,6 +30,7 @@ export default function Landing() {
   const [selectedSkill, setSelectedSkill] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
 
   const trimmedSearch = searchTerm.trim();
   const normalizedSearch = trimmedSearch.toLowerCase();
@@ -80,6 +81,18 @@ export default function Landing() {
       return matchesSkill && matchesSearch;
     });
   }, [selectedSkill, normalizedSearch]);
+
+  const searchSuggestions = useMemo(() => {
+    if (!normalizedSearch) {
+      return [];
+    }
+    return TEMPLATE_ENTRIES.filter(([, template]) => {
+      return (
+        template.title.toLowerCase().includes(normalizedSearch) ||
+        template.description.toLowerCase().includes(normalizedSearch)
+      );
+    }).slice(0, 5);
+  }, [normalizedSearch]);
 
   useEffect(() => {
     setIsFiltering(true);
@@ -324,11 +337,48 @@ export default function Landing() {
                 <Input
                   placeholder="Search by role or keyword..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    setSearchTerm(value);
+                    setShowSuggestions(Boolean(value.trim()));
+                  }}
+                  onFocus={() => {
+                    if (searchTerm.trim()) {
+                      setShowSuggestions(true);
+                    }
+                  }}
+                  onBlur={() => {
+                    window.setTimeout(() => setShowSuggestions(false), 150);
+                  }}
                   className="pl-9"
                 />
+                {showSuggestions && searchSuggestions.length > 0 && (
+                  <div className="absolute left-0 right-0 mt-2 z-20 rounded-xl border bg-card p-2 shadow-lg">
+                    {searchSuggestions.map(([key, template]) => (
+                      <button
+                        key={key}
+                        type="button"
+                        className="w-full rounded-lg p-3 text-left transition-colors hover:bg-muted"
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          setSearchTerm(template.title);
+                          setSelectedSkill("all");
+                          setShowSuggestions(false);
+                        }}
+                      >
+                        <div className="text-sm font-semibold">
+                          {highlightText(template.title)}
+                        </div>
+                        <p className="mt-1 text-xs text-muted-foreground line-clamp-2">
+                          {highlightText(template.description)}
+                        </p>
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
             </div>
+
             <div className="flex flex-wrap justify-center gap-3 w-full">
               <Button
                 type="button"
