@@ -1,9 +1,10 @@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CAREER_TEMPLATES } from "@/lib/career-data";
 import { motion } from "framer-motion";
-import { ArrowRight, Compass, Map, Target, Trophy, ShieldCheck, GraduationCap, Check } from "lucide-react";
+import { ArrowRight, Compass, Map, Target, Trophy, ShieldCheck, GraduationCap, Check, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useMemo, useState } from "react";
@@ -24,6 +25,7 @@ export default function Landing() {
   };
 
   const [selectedSkill, setSelectedSkill] = useState<string>("all");
+  const [searchTerm, setSearchTerm] = useState("");
   const adminHighlights = [
     "Monitor counselor performance and sessions",
     "Curate career resources & update templates",
@@ -43,13 +45,17 @@ export default function Landing() {
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    if (selectedSkill === "all") {
-      return TEMPLATE_ENTRIES;
-    }
-    return TEMPLATE_ENTRIES.filter(([, template]) =>
-      template.skills?.includes(selectedSkill),
-    );
-  }, [selectedSkill]);
+    const normalizedSearch = searchTerm.trim().toLowerCase();
+    return TEMPLATE_ENTRIES.filter(([, template]) => {
+      const matchesSkill =
+        selectedSkill === "all" || template.skills?.includes(selectedSkill);
+      const matchesSearch =
+        !normalizedSearch ||
+        template.title.toLowerCase().includes(normalizedSearch) ||
+        template.description.toLowerCase().includes(normalizedSearch);
+      return matchesSkill && matchesSearch;
+    });
+  }, [selectedSkill, searchTerm]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -66,7 +72,9 @@ export default function Landing() {
             <Button variant="ghost" onClick={() => navigate("/auth")}>
               Sign In
             </Button>
-            <Button onClick={handleGetStarted}>Get Started</Button>
+            <Button onClick={() => handleGetStarted()}>
+              Get Started
+            </Button>
           </div>
         </div>
       </nav>
@@ -89,7 +97,11 @@ export default function Landing() {
             Discover your ideal career path, create actionable roadmaps, and track your professional growth with AI-powered guidance.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-            <Button size="lg" className="h-12 px-8 text-lg" onClick={handleGetStarted}>
+            <Button
+              size="lg"
+              className="h-12 px-8 text-lg"
+              onClick={() => handleGetStarted()}
+            >
               Start Your Journey <ArrowRight className="ml-2 h-5 w-5" />
             </Button>
             <Button size="lg" variant="outline" className="h-12 px-8 text-lg">
@@ -276,27 +288,40 @@ export default function Landing() {
             </p>
           </motion.div>
           <div className="flex flex-wrap justify-center gap-3">
-            <Button
-              type="button"
-              variant={selectedSkill === "all" ? "default" : "outline"}
-              size="sm"
-              className="rounded-full"
-              onClick={() => setSelectedSkill("all")}
-            >
-              All Skills
-            </Button>
-            {skillOptions.map((skill) => (
+            <div className="w-full max-w-xl">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search by role or keyword..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-9"
+                />
+              </div>
+            </div>
+            <div className="flex flex-wrap justify-center gap-3 w-full">
               <Button
-                key={skill}
                 type="button"
-                variant={selectedSkill === skill ? "default" : "ghost"}
+                variant={selectedSkill === "all" ? "default" : "outline"}
                 size="sm"
-                className={`rounded-full border ${selectedSkill === skill ? "" : "bg-card/60"}`}
-                onClick={() => setSelectedSkill(skill)}
+                className="rounded-full"
+                onClick={() => setSelectedSkill("all")}
               >
-                {skill}
+                All Skills
               </Button>
-            ))}
+              {skillOptions.map((skill) => (
+                <Button
+                  key={skill}
+                  type="button"
+                  variant={selectedSkill === skill ? "default" : "ghost"}
+                  size="sm"
+                  className={`rounded-full border ${selectedSkill === skill ? "" : "bg-card/60"}`}
+                  onClick={() => setSelectedSkill(skill)}
+                >
+                  {skill}
+                </Button>
+              ))}
+            </div>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {filteredTemplates.map(([key, template], index) => (
@@ -331,7 +356,11 @@ export default function Landing() {
                         </Badge>
                       ))}
                     </div>
-                    <Button className="w-full" variant="outline" onClick={handleGetStarted}>
+                    <Button
+                      className="w-full"
+                      variant="outline"
+                      onClick={() => handleGetStarted()}
+                    >
                       Generate this roadmap <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </CardContent>
