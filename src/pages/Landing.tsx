@@ -1,8 +1,14 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CAREER_TEMPLATES } from "@/lib/career-data";
 import { motion } from "framer-motion";
 import { ArrowRight, Compass, Map, Target, Trophy } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
+import { useMemo, useState } from "react";
+
+const TEMPLATE_ENTRIES = Object.entries(CAREER_TEMPLATES);
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -15,6 +21,24 @@ export default function Landing() {
       navigate("/auth");
     }
   };
+
+  const [selectedSkill, setSelectedSkill] = useState<string>("all");
+  const skillOptions = useMemo(() => {
+    const uniqueSkills = new Set<string>();
+    TEMPLATE_ENTRIES.forEach(([, template]) => {
+      template.skills?.forEach((skill) => uniqueSkills.add(skill));
+    });
+    return Array.from(uniqueSkills).sort();
+  }, []);
+
+  const filteredTemplates = useMemo(() => {
+    if (selectedSkill === "all") {
+      return TEMPLATE_ENTRIES;
+    }
+    return TEMPLATE_ENTRIES.filter(([, template]) =>
+      template.skills?.includes(selectedSkill),
+    );
+  }, [selectedSkill]);
 
   return (
     <div className="min-h-screen flex flex-col bg-background">
@@ -109,6 +133,91 @@ export default function Landing() {
               Set milestones and track your progress. Stay motivated with visual insights into your career growth.
             </p>
           </motion.div>
+        </div>
+      </section>
+
+      <section className="py-16 bg-muted/30">
+        <div className="max-w-6xl mx-auto px-4 space-y-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-3"
+          >
+            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+              Skill Explorer
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Filter career paths by the skills you love
+            </h2>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Tap a skill tag to instantly surface the paths where it shines the most.
+            </p>
+          </motion.div>
+          <div className="flex flex-wrap justify-center gap-3">
+            <Button
+              type="button"
+              variant={selectedSkill === "all" ? "default" : "outline"}
+              size="sm"
+              className="rounded-full"
+              onClick={() => setSelectedSkill("all")}
+            >
+              All Skills
+            </Button>
+            {skillOptions.map((skill) => (
+              <Button
+                key={skill}
+                type="button"
+                variant={selectedSkill === skill ? "default" : "ghost"}
+                size="sm"
+                className={`rounded-full border ${selectedSkill === skill ? "" : "bg-card/60"}`}
+                onClick={() => setSelectedSkill(skill)}
+              >
+                {skill}
+              </Button>
+            ))}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filteredTemplates.map(([key, template], index) => (
+              <motion.div
+                key={key}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.1 }}
+              >
+                <Card className="h-full border bg-card/70 backdrop-blur">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="text-2xl">{template.title}</CardTitle>
+                      <Badge variant="secondary" className="text-xs uppercase tracking-wide">
+                        {template.steps.length} steps
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <p className="text-sm text-muted-foreground leading-relaxed">
+                      {template.description}
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {template.skills?.map((skill) => (
+                        <Badge
+                          key={skill}
+                          variant="outline"
+                          className="bg-background/60 border-primary/20 text-primary"
+                        >
+                          {skill}
+                        </Badge>
+                      ))}
+                    </div>
+                    <Button className="w-full" variant="outline" onClick={handleGetStarted}>
+                      Generate this roadmap <ArrowRight className="ml-2 h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </section>
 
