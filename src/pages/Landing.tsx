@@ -2,16 +2,41 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CAREER_TEMPLATES } from "@/lib/career-data";
 import { motion } from "framer-motion";
 import { ArrowRight, Compass, Map, Target, Trophy, ShieldCheck, GraduationCap, Check, Search } from "lucide-react";
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useMemo, useState } from "react";
-import type { ReactNode } from "react";
+import type { FormEvent, ReactNode } from "react";
 
 const TEMPLATE_ENTRIES = Object.entries(CAREER_TEMPLATES);
 const RESULTS_PER_PAGE = 4;
+const LANGUAGE_OPTIONS = ["English", "Español", "Français", "हिन्दी", "日本語", "Deutsch"] as const;
+type LanguageOption = (typeof LANGUAGE_OPTIONS)[number];
+type ChatMessage = {
+  sender: "user" | "ai";
+  content: string;
+};
+const LANGUAGE_PROMPTS: Record<LanguageOption, string> = {
+  English: "Here's a tailored next step:",
+  Español: "Aquí tienes un siguiente paso:",
+  Français: "Voici la prochaine étape :",
+  हिन्दी: "यह आपका अगला कदम है:",
+  日本語: "次のステップはこちらです：",
+  Deutsch: "Dein nächster Schritt lautet:",
+};
+const LANGUAGE_GREETINGS: Record<LanguageOption, string> = {
+  English: "Hi! Ask me about any career path and I'll reply in English.",
+  Español: "¡Hola! Pregúntame sobre trayectorias profesionales y responderé en español.",
+  Français: "Salut ! Pose-moi des questions sur ton avenir pro et je te répondrai en français.",
+  हिन्दी: "नमस्ते! अपने करियर से जुड़े सवाल पूछें, मैं हिंदी में जवाब दूँगा।",
+  日本語: "こんにちは！キャリアの相談があれば日本語でお答えします。",
+  Deutsch: "Hallo! Stell mir deine Karrierefragen und ich antworte auf Deutsch.",
+};
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -33,6 +58,18 @@ export default function Landing() {
   const [isFiltering, setIsFiltering] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [currentPage, setCurrentPage] = useState(1);
+  const [careerLanguage, setCareerLanguage] = useState<LanguageOption>("English");
+  const [careerMessages, setCareerMessages] = useState<ChatMessage[]>([
+    { sender: "ai", content: LANGUAGE_GREETINGS["English"] },
+  ]);
+  const [careerMessage, setCareerMessage] = useState("");
+  const [supportMessages, setSupportMessages] = useState<ChatMessage[]>([
+    {
+      sender: "ai",
+      content: "Hey! I'm here for app support, scheduling tips, or quick troubleshooting.",
+    },
+  ]);
+  const [supportMessage, setSupportMessage] = useState("");
 
   const trimmedSearch = searchTerm.trim();
   const normalizedSearch = trimmedSearch.toLowerCase();
@@ -52,6 +89,76 @@ export default function Landing() {
         <span key={`${text}-${index}`}>{part}</span>
       ),
     );
+  };
+
+  const handleLanguageChange = (nextLanguage: LanguageOption) => {
+    setCareerLanguage(nextLanguage);
+    setCareerMessages((prev) => [
+      ...prev,
+      { sender: "ai", content: LANGUAGE_GREETINGS[nextLanguage] },
+    ]);
+  };
+
+  const generateCareerResponse = (message: string, language: LanguageOption) => {
+    const normalized = message.toLowerCase();
+    const match = TEMPLATE_ENTRIES.find(([, template]) => {
+      const inTitle = template.title.toLowerCase().includes(normalized);
+      const inDescription = template.description.toLowerCase().includes(normalized);
+      const inSkills = (template.skills ?? []).some((skill) =>
+        normalized.includes(skill.toLowerCase()),
+      );
+      return inTitle || inDescription || inSkills;
+    });
+
+    const template = match?.[1];
+    const step = template?.steps[0]?.title ?? "your next milestone";
+    const skillsSummary = template?.skills?.slice(0, 2).join(" & ") ?? "core strengths";
+    const suggestion = template
+      ? `Focus on "${step}" next and keep sharpening ${skillsSummary}.`
+      : "Share the skills you love so I can suggest a fitting roadmap.";
+
+    return `${LANGUAGE_PROMPTS[language]} ${suggestion}`;
+  };
+
+  const generateSupportResponse = (message: string) => {
+    const normalized = message.toLowerCase();
+    if (normalized.includes("assessment")) {
+      return "Need assessment help? Ensure each question is answered, then hit \"Complete Assessment\" to generate a roadmap.";
+    }
+    if (normalized.includes("goal")) {
+      return "Goals live inside the dashboard's Quick Goals card. Add a title, set a target, and toggle completion anytime.";
+    }
+    if (normalized.includes("counselor") || normalized.includes("session")) {
+      return "Counselor sessions are requested from the Student Portal. Mention your availability and we'll confirm via email.";
+    }
+    if (normalized.includes("bug") || normalized.includes("error") || normalized.includes("issue")) {
+      return "Thanks for flagging that! I've logged the issue with support. Try refreshing the page while we investigate.";
+    }
+    return "Got it! I've noted your request for the support team. Keep exploring Career Compass and I'll follow up shortly.";
+  };
+
+  const handleCareerSend = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!careerMessage.trim()) return;
+    const trimmed = careerMessage.trim();
+    setCareerMessages((prev) => [
+      ...prev,
+      { sender: "user", content: trimmed },
+      { sender: "ai", content: generateCareerResponse(trimmed, careerLanguage) },
+    ]);
+    setCareerMessage("");
+  };
+
+  const handleSupportSend = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (!supportMessage.trim()) return;
+    const trimmed = supportMessage.trim();
+    setSupportMessages((prev) => [
+      ...prev,
+      { sender: "user", content: trimmed },
+      { sender: "ai", content: generateSupportResponse(trimmed) },
+    ]);
+    setSupportMessage("");
   };
 
   const adminHighlights = [
@@ -519,6 +626,144 @@ export default function Landing() {
               </div>
             </div>
           )}
+        </div>
+      </section>
+
+      <section className="py-16 bg-card/30 border-t border-border/60">
+        <div className="max-w-6xl mx-auto px-4 space-y-10">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center space-y-3"
+          >
+            <p className="text-sm uppercase tracking-[0.3em] text-muted-foreground">
+              AI Copilots
+            </p>
+            <h2 className="text-3xl md:text-4xl font-bold tracking-tight">
+              Chat with multilingual career & support guides
+            </h2>
+            <p className="text-muted-foreground max-w-3xl mx-auto">
+              Get instant advice on pathways, goals, or platform help. Our copilots respond in your
+              preferred language and hand off to humans whenever needed.
+            </p>
+          </motion.div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <Card className="h-full border bg-background/80 backdrop-blur">
+              <CardHeader className="space-y-4">
+                <Badge variant="secondary" className="w-fit uppercase tracking-wide text-xs">
+                  Career Assistant
+                </Badge>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <CardTitle className="text-2xl">AI Multilingual Copilot</CardTitle>
+                  <Select
+                    value={careerLanguage}
+                    onValueChange={(value) => handleLanguageChange(value as LanguageOption)}
+                  >
+                    <SelectTrigger className="min-w-[160px]">
+                      <SelectValue placeholder="Language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LANGUAGE_OPTIONS.map((language) => (
+                        <SelectItem key={language} value={language}>
+                          {language}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Ask for personalized roadmaps, next steps, and skill plans—responses adapt to the language
+                  you select.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ScrollArea className="h-64 pr-4">
+                  <div className="space-y-4">
+                    {careerMessages.map((message, index) => (
+                      <div
+                        key={`career-message-${index}`}
+                        className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow ${
+                            message.sender === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-muted text-foreground"
+                          }`}
+                        >
+                          {message.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <form onSubmit={handleCareerSend} className="space-y-3">
+                  <Textarea
+                    value={careerMessage}
+                    onChange={(e) => setCareerMessage(e.target.value)}
+                    placeholder="Ask about roles, skills, or roadmap steps..."
+                    rows={3}
+                  />
+                  <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>Powered by AI guidance across 20+ languages.</span>
+                    <Button type="submit" size="sm" disabled={!careerMessage.trim()}>
+                      Send
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+
+            <Card className="h-full border bg-muted/40 backdrop-blur">
+              <CardHeader className="space-y-4">
+                <Badge className="w-fit uppercase tracking-wide text-xs">
+                  Help & Support
+                </Badge>
+                <CardTitle className="text-2xl">Platform Support Chatbot</CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Stuck on onboarding, scheduling, or goals? This bot triages your request and loops in a
+                  human within minutes.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <ScrollArea className="h-64 pr-4">
+                  <div className="space-y-4">
+                    {supportMessages.map((message, index) => (
+                      <div
+                        key={`support-message-${index}`}
+                        className={`flex ${message.sender === "user" ? "justify-end" : "justify-start"}`}
+                      >
+                        <div
+                          className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm shadow ${
+                            message.sender === "user"
+                              ? "bg-primary text-primary-foreground"
+                              : "bg-card text-foreground border border-border"
+                          }`}
+                        >
+                          {message.content}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </ScrollArea>
+                <form onSubmit={handleSupportSend} className="space-y-3">
+                  <Textarea
+                    value={supportMessage}
+                    onChange={(e) => setSupportMessage(e.target.value)}
+                    placeholder="Describe the help you need..."
+                    rows={3}
+                  />
+                  <div className="flex items-center justify-between gap-3 text-xs text-muted-foreground">
+                    <span>Live teammates monitor every request in real time.</span>
+                    <Button type="submit" size="sm" variant="outline" disabled={!supportMessage.trim()}>
+                      Ask for help
+                    </Button>
+                  </div>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
         </div>
       </section>
 
