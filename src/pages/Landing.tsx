@@ -11,6 +11,7 @@ import { useEffect, useMemo, useState } from "react";
 import type { ReactNode } from "react";
 
 const TEMPLATE_ENTRIES = Object.entries(CAREER_TEMPLATES);
+const RESULTS_PER_PAGE = 4;
 
 const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
@@ -31,6 +32,7 @@ export default function Landing() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
 
   const trimmedSearch = searchTerm.trim();
   const normalizedSearch = trimmedSearch.toLowerCase();
@@ -82,17 +84,22 @@ export default function Landing() {
     });
   }, [selectedSkill, normalizedSearch]);
 
-  const searchSuggestions = useMemo(() => {
-    if (!normalizedSearch) {
-      return [];
-    }
-    return TEMPLATE_ENTRIES.filter(([, template]) => {
-      return (
-        template.title.toLowerCase().includes(normalizedSearch) ||
-        template.description.toLowerCase().includes(normalizedSearch)
-      );
-    }).slice(0, 5);
-  }, [normalizedSearch]);
+  const paginatedTemplates = useMemo(() => {
+    const start = (currentPage - 1) * RESULTS_PER_PAGE;
+    return filteredTemplates.slice(start, start + RESULTS_PER_PAGE);
+  }, [filteredTemplates, currentPage]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / RESULTS_PER_PAGE));
+  const pageStart = filteredTemplates.length === 0 ? 0 : (currentPage - 1) * RESULTS_PER_PAGE + 1;
+  const pageEnd = Math.min(currentPage * RESULTS_PER_PAGE, filteredTemplates.length);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [selectedSkill, normalizedSearch]);
+
+  useEffect(() => {
+    setCurrentPage((prev) => Math.min(prev, totalPages));
+  }, [totalPages]);
 
   useEffect(() => {
     setIsFiltering(true);
@@ -429,7 +436,7 @@ export default function Landing() {
                 </Card>
               ))
             ) : (
-              filteredTemplates.map(([key, template], index) => (
+              paginatedTemplates.map(([key, template], index) => (
                 <motion.div
                   key={key}
                   initial={{ opacity: 0, y: 20 }}
@@ -474,6 +481,36 @@ export default function Landing() {
               ))
             )}
           </div>
+          {!isFiltering && filteredTemplates.length > RESULTS_PER_PAGE && (
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <p className="text-sm text-muted-foreground">
+                Showing {pageStart}-{pageEnd} of {filteredTemplates.length} results
+              </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === 1}
+                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                >
+                  Previous
+                </Button>
+                <span className="text-sm font-medium">
+                  Page {currentPage} of {totalPages}
+                </span>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={currentPage === totalPages}
+                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                >
+                  Next
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
