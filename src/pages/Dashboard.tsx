@@ -1,13 +1,16 @@
 import { AppNavbar } from "@/components/AppNavbar";
 import { RoadmapDisplay } from "@/components/RoadmapDisplay";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { api } from "@/convex/_generated/api";
+import { CAREER_TEMPLATES } from "@/lib/career-data";
 import { useAuth } from "@/hooks/use-auth";
 import { useMutation, useQuery } from "convex/react";
-import { Plus, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { motion } from "framer-motion";
+import { Plus, Search, Trash2 } from "lucide-react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "react-router";
 import { toast } from "sonner";
 
@@ -19,8 +22,74 @@ export default function Dashboard() {
   const addGoal = useMutation(api.goals.addGoal);
   const toggleGoal = useMutation(api.goals.toggleGoal);
   const deleteGoal = useMutation(api.goals.deleteGoal);
+  const createRoadmap = useMutation(api.roadmaps.createRoadmap);
 
   const [newGoal, setNewGoal] = useState("");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
+  const [generatingCareer, setGeneratingCareer] = useState<string | null>(null);
+
+  const templateEntries = useMemo(
+    () => Object.entries(CAREER_TEMPLATES),
+    [],
+  );
+
+  const allSkills = useMemo(() => {
+    const uniqueSkills = new Set<string>();
+    templateEntries.forEach(([, template]) => {
+      (template.skills ?? []).forEach((skill) => uniqueSkills.add(skill));
+    });
+    return Array.from(uniqueSkills).sort();
+  }, [templateEntries]);
+
+  const filteredTemplates = useMemo(() => {
+    const search = searchTerm.trim().toLowerCase();
+    return templateEntries.filter(([, template]) => {
+      const matchesSearch =
+        !search ||
+        template.title.toLowerCase().includes(search) ||
+        template.description.toLowerCase().includes(search);
+      const matchesSkills =
+        selectedSkills.length === 0 ||
+        selectedSkills.every((skill) => template.skills?.includes(skill));
+      return matchesSearch && matchesSkills;
+    });
+  }, [searchTerm, selectedSkills, templateEntries]);
+
+  const toggleSkill = (skill: string) => {
+    setSelectedSkills((prev) =>
+      prev.includes(skill) ? prev.filter((s) => s !== skill) : [...prev, skill],
+    );
+  };
+
+  const handleGenerateRoadmap = async (careerKey: string) => {
+    const template =
+      CAREER_TEMPLATES[careerKey as keyof typeof CAREER_TEMPLATES];
+    if (!template) return;
+
+    try {
+      setGeneratingCareer(careerKey);
+      await createRoadmap({
+        title: template.title,
+        description: template.description,
+        steps: template.steps.map((step) => ({
+          id: crypto.randomUUID(),
+          title: step.title,
+          description: step.description,
+          isCompleted: false,
+        })),
+        skills: template.skills,
+      });
+      toast.success("Roadmap updated", {
+        description: `${template.title} is now your active path.`,
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error("Unable to switch roadmap right now.");
+    } finally {
+      setGeneratingCareer(null);
+    }
+  };
 
   const handleAddGoal = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -122,6 +191,91 @@ export default function Dashboard() {
             </Card>
           </div>
         </div>
+
+        <section className="mt-12 space-y-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h2 className="text-2xl font-bold tracking-tight">
+                Explore Career Paths
+              </h2>
+              <p className="text-muted-foreground">
+                Search and filter by skills to switch paths anytime.
+              </p>
+            </div>
+            <div className="w-full md:w-80 relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search careers..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-9"
+              />
+            </div>
+          </div>
+
+          {!!allSkills.length && (
+            <div className="flex flex-wrap gap-2">
+              {allSkills.map((skill) => (
+                <Button
+                  key={skill}
+                  type="button"
+                  size="sm"
+                  variant={selectedSkills.includes(skill) ? "default" : "outline"}
+                  onClick={() => toggleSkill(skill)}
+                  className="rounded-full"
+                >
+                  {skill}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {filteredTemplates.length ? (
+              filteredTemplates.map(([key, template], index) => (
+                <motion.div
+                  key={key}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                >
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>{template.title}</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        {template.description}
+                      </p>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="flex flex-wrap gap-2">
+                        {(template.skills ?? []).map((skill) => (
+                          <Badge key={skill} variant="outline">
+                            {skill}
+                          </Badge>
+                        ))}
+                      </div>
+                      <Button
+                        className="w-full"
+                        onClick={() => handleGenerateRoadmap(key)}
+                        disabled={generatingCareer === key}
+                      >
+                        {generatingCareer === key
+                          ? "Updating..."
+                          : "Switch to this path"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))
+            ) : (
+              <Card>
+                <CardContent className="py-12 text-center text-muted-foreground">
+                  No career paths match your current filters.
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </section>
       </main>
     </div>
   );
