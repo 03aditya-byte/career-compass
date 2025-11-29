@@ -14,11 +14,12 @@ export default function Landing() {
   const navigate = useNavigate();
   const { isAuthenticated } = useAuth();
 
-  const handleGetStarted = () => {
+  const handleGetStarted = (target?: "admin" | "student") => {
+    const destination = target === "admin" ? "/dashboard?view=admin" : "/dashboard";
     if (isAuthenticated) {
-      navigate("/dashboard");
+      navigate(destination);
     } else {
-      navigate("/auth");
+      navigate(`/auth?redirect=${encodeURIComponent(destination)}`);
     }
   };
 
@@ -198,10 +199,15 @@ export default function Landing() {
                   <Button
                     variant="outline"
                     className="w-full"
-                    onClick={() => navigate("/dashboard?view=admin")}
+                    onClick={() => handleGetStarted("admin")}
                   >
                     Launch Admin Portal <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
+                  {!isAuthenticated && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      Sign in required before entering the admin workspace.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
@@ -236,9 +242,14 @@ export default function Landing() {
                       </li>
                     ))}
                   </ul>
-                  <Button className="w-full" onClick={handleGetStarted}>
+                  <Button className="w-full" onClick={() => handleGetStarted("student")}>
                     Enter Student Portal <ArrowRight className="ml-2 h-4 w-4" />
                   </Button>
+                  {!isAuthenticated && (
+                    <p className="text-xs text-muted-foreground text-center">
+                      We'll prompt you to sign in before continuing.
+                    </p>
+                  )}
                 </CardContent>
               </Card>
             </motion.div>
