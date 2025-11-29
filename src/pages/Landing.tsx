@@ -8,8 +8,11 @@ import { ArrowRight, Compass, Map, Target, Trophy, ShieldCheck, GraduationCap, C
 import { useNavigate } from "react-router";
 import { useAuth } from "@/hooks/use-auth";
 import { useEffect, useMemo, useState } from "react";
+import type { ReactNode } from "react";
 
 const TEMPLATE_ENTRIES = Object.entries(CAREER_TEMPLATES);
+
+const escapeRegExp = (value: string) => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
 
 export default function Landing() {
   const navigate = useNavigate();
@@ -27,6 +30,27 @@ export default function Landing() {
   const [selectedSkill, setSelectedSkill] = useState<string>("all");
   const [searchTerm, setSearchTerm] = useState("");
   const [isFiltering, setIsFiltering] = useState(false);
+
+  const trimmedSearch = searchTerm.trim();
+  const normalizedSearch = trimmedSearch.toLowerCase();
+
+  const highlightText = (text: string): ReactNode => {
+    if (!trimmedSearch) {
+      return text;
+    }
+
+    const regex = new RegExp(`(${escapeRegExp(trimmedSearch)})`, "ig");
+    return text.split(regex).map((part, index) =>
+      part.toLowerCase() === normalizedSearch ? (
+        <span key={`${text}-${index}`} className="bg-primary/20 text-primary px-1 rounded">
+          {part}
+        </span>
+      ) : (
+        <span key={`${text}-${index}`}>{part}</span>
+      ),
+    );
+  };
+
   const adminHighlights = [
     "Monitor counselor performance and sessions",
     "Curate career resources & update templates",
@@ -46,7 +70,6 @@ export default function Landing() {
   }, []);
 
   const filteredTemplates = useMemo(() => {
-    const normalizedSearch = searchTerm.trim().toLowerCase();
     return TEMPLATE_ENTRIES.filter(([, template]) => {
       const matchesSkill =
         selectedSkill === "all" || template.skills?.includes(selectedSkill);
@@ -56,7 +79,7 @@ export default function Landing() {
         template.description.toLowerCase().includes(normalizedSearch);
       return matchesSkill && matchesSearch;
     });
-  }, [selectedSkill, searchTerm]);
+  }, [selectedSkill, normalizedSearch]);
 
   useEffect(() => {
     setIsFiltering(true);
@@ -367,7 +390,7 @@ export default function Landing() {
                   <Card className="h-full border bg-card/70 backdrop-blur">
                     <CardHeader>
                       <div className="flex items-center justify-between">
-                        <CardTitle className="text-2xl">{template.title}</CardTitle>
+                        <CardTitle className="text-2xl">{highlightText(template.title)}</CardTitle>
                         <Badge variant="secondary" className="text-xs uppercase tracking-wide">
                           {template.steps.length} steps
                         </Badge>
@@ -375,7 +398,7 @@ export default function Landing() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <p className="text-sm text-muted-foreground leading-relaxed">
-                        {template.description}
+                        {highlightText(template.description)}
                       </p>
                       <div className="flex flex-wrap gap-2">
                         {template.skills?.map((skill) => (
