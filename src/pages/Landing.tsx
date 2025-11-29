@@ -72,6 +72,14 @@ export default function Landing() {
     return Array.from(uniqueSkills).sort();
   }, []);
 
+  const searchSuggestions = useMemo(() => {
+    if (!normalizedSearch) return [];
+    return TEMPLATE_ENTRIES.filter(([, template]) =>
+      template.title.toLowerCase().includes(normalizedSearch) ||
+      template.description.toLowerCase().includes(normalizedSearch)
+    ).slice(0, 5);
+  }, [normalizedSearch]);
+
   const filteredTemplates = useMemo(() => {
     return TEMPLATE_ENTRIES.filter(([, template]) => {
       const matchesSkill =
