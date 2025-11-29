@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, Circle, Lock } from "lucide-react";
 import { motion } from "framer-motion";
@@ -18,16 +19,18 @@ interface RoadmapDisplayProps {
   title: string;
   description: string;
   steps: Step[];
+  skills?: string[];
 }
 
-export function RoadmapDisplay({ roadmapId, title, description, steps }: RoadmapDisplayProps) {
+export function RoadmapDisplay({ roadmapId, title, description, steps, skills = [] }: RoadmapDisplayProps) {
   const toggleStep = useMutation(api.roadmaps.toggleStep);
 
   const handleToggle = async (stepId: string) => {
     await toggleStep({ roadmapId, stepId });
   };
 
-  const progress = Math.round((steps.filter(s => s.isCompleted).length / steps.length) * 100);
+  const completedSteps = steps.filter((s) => s.isCompleted).length;
+  const progress = steps.length ? Math.round((completedSteps / steps.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
@@ -35,6 +38,19 @@ export function RoadmapDisplay({ roadmapId, title, description, steps }: Roadmap
         <div>
           <h2 className="text-2xl font-bold tracking-tight">{title}</h2>
           <p className="text-muted-foreground">{description}</p>
+          {skills.length ? (
+            <div className="flex flex-wrap gap-2 mt-4 md:mt-2">
+              {skills.map((skill) => (
+                <Badge
+                  key={skill}
+                  variant="outline"
+                  className="bg-primary/5 border-primary/20 text-primary"
+                >
+                  {skill}
+                </Badge>
+              ))}
+            </div>
+          ) : null}
         </div>
         <div className="flex items-center gap-4 bg-card border p-4 rounded-xl">
           <div className="text-sm font-medium">Progress</div>

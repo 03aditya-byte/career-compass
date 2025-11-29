@@ -55,6 +55,7 @@ const schema = defineSchema(
         })
       ),
       status: v.string(), // "active", "completed", "archived"
+      skills: v.optional(v.array(v.string())),
     }).index("by_user", ["userId"]),
 
     goals: defineTable({

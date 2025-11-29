@@ -93,12 +93,13 @@ export default function Assessment() {
         await createRoadmap({
           title: template.title,
           description: template.description,
-          steps: template.steps.map(s => ({
+          steps: template.steps.map((s) => ({
             id: crypto.randomUUID(),
             title: s.title,
             description: s.description,
-            isCompleted: false
+            isCompleted: false,
           })),
+          skills: template.skills,
         });
       }
 

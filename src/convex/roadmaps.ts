@@ -14,6 +14,7 @@ export const createRoadmap = mutation({
         isCompleted: v.boolean(),
       })
     ),
+    skills: v.optional(v.array(v.string())),
   },
   handler: async (ctx, args) => {
     const userId = await getAuthUserId(ctx);
@@ -36,6 +37,7 @@ export const createRoadmap = mutation({
       description: args.description,
       steps: args.steps,
       status: "active",
+      skills: args.skills ?? [],
     });
 
     return roadmapId;

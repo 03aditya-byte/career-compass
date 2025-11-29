@@ -8,7 +8,8 @@ export const CAREER_TEMPLATES = {
       { title: "Learn Backend (Node/Convex)", description: "Handle data and server logic." },
       { title: "Build a Portfolio", description: "Showcase your projects." },
       { title: "Apply for Jobs", description: "Start your career." },
-    ]
+    ],
+    skills: ["JavaScript", "React", "Node.js", "Databases"]
   },
   "Data Scientist": {
     title: "Data Scientist Path",
@@ -19,7 +20,8 @@ export const CAREER_TEMPLATES = {
       { title: "Learn Pandas & NumPy", description: "Data manipulation libraries." },
       { title: "Machine Learning Basics", description: "Understand algorithms and models." },
       { title: "Build Data Projects", description: "Analyze real-world datasets." },
-    ]
+    ],
+    skills: ["Python", "SQL", "Machine Learning", "Statistics"]
   },
   "Product Manager": {
     title: "Product Manager Path",
@@ -30,7 +32,8 @@ export const CAREER_TEMPLATES = {
       { title: "Roadmapping", description: "Plan product features and timelines." },
       { title: "Data Analysis", description: "Make data-driven decisions." },
       { title: "Stakeholder Management", description: "Communicate effectively with teams." },
-    ]
+    ],
+    skills: ["Agile", "User Research", "Roadmapping", "Stakeholder Management"]
   },
   "UX Designer": {
     title: "UX Designer Path",
@@ -41,6 +44,7 @@ export const CAREER_TEMPLATES = {
       { title: "User Research", description: "Understand user behaviors." },
       { title: "Prototyping", description: "Create interactive mockups." },
       { title: "Build a Portfolio", description: "Showcase your design process." },
-    ]
+    ],
+    skills: ["Design Systems", "User Research", "Prototyping", "Figma"]
   }
 };

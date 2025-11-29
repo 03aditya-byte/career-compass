@@ -54,6 +54,7 @@ export default function Dashboard() {
                 title={activeRoadmap.title}
                 description={activeRoadmap.description}
                 steps={activeRoadmap.steps}
+                skills={activeRoadmap.skills ?? []}
               />
             ) : (
               <Card className="border-dashed">
